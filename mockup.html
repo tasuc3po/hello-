@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沖縄DX現場ラボ - イメージモック</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #F8F9FA; color: #333; }
+
+  /* ヘッダー */
+  header {
+    background: #0096C7;
+    color: white;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .site-title { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+  .site-title span { font-size: 12px; display: block; font-weight: normal; opacity: 0.85; margin-top: 2px; }
+  nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 24px;
+    font-size: 14px;
+    opacity: 0.9;
+  }
+  nav a:hover { opacity: 1; border-bottom: 2px solid #FF6B35; }
+
+  /* ヒーローエリア */
+  .hero {
+    background: linear-gradient(135deg, #0096C7 0%, #0077A8 100%);
+    color: white;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .hero h2 { font-size: 32px; margin-bottom: 16px; line-height: 1.4; }
+  .hero p { font-size: 16px; opacity: 0.9; margin-bottom: 28px; }
+  .hero-btn {
+    background: #FF6B35;
+    color: white;
+    padding: 14px 36px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    display: inline-block;
+    box-shadow: 0 4px 12px rgba(255,107,53,0.4);
+  }
+
+  /* メインコンテンツ */
+  .container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+  }
+
+  /* カテゴリバッジ */
+  .category-label {
+    background: #0096C7;
+    color: white;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+
+  /* 記事カード */
+  .card {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 24px;
+    display: flex;
+  }
+  .card-img {
+    width: 200px;
+    min-height: 140px;
+    background: linear-gradient(135deg, #0096C7, #00C9A7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 36px;
+    flex-shrink: 0;
+  }
+  .card-body { padding: 20px; }
+  .card-body h3 { font-size: 17px; margin-bottom: 8px; line-height: 1.5; color: #1a1a1a; }
+  .card-body p { font-size: 13px; color: #666; line-height: 1.6; }
+  .card-meta { font-size: 12px; color: #999; margin-top: 12px; }
+  .read-more {
+    color: #FF6B35;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-top: 10px;
+    display: inline-block;
+  }
+
+  /* サイドバー */
+  .sidebar {}
+  .widget {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+  .widget h4 {
+    font-size: 14px;
+    color: #0096C7;
+    border-left: 4px solid #FF6B35;
+    padding-left: 10px;
+    margin-bottom: 16px;
+    font-weight: bold;
+  }
+  .profile-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0096C7, #FF6B35);
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 28px;
+  }
+  .profile-name { text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 8px; }
+  .profile-bio { font-size: 12px; color: #666; line-height: 1.6; text-align: center; }
+  .tag {
+    display: inline-block;
+    background: #F0F9FF;
+    color: #0096C7;
+    border: 1px solid #0096C7;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    margin: 4px 3px;
+  }
+  .cta-widget {
+    background: linear-gradient(135deg, #0096C7, #0077A8);
+    color: white;
+    text-align: center;
+  }
+  .cta-widget h4 { color: white; border-left-color: #FF6B35; }
+  .cta-widget p { font-size: 13px; margin-bottom: 16px; opacity: 0.9; }
+  .cta-btn {
+    background: #FF6B35;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  /* フッター */
+  footer {
+    background: #1a1a2e;
+    color: #aaa;
+    text-align: center;
+    padding: 30px;
+    font-size: 13px;
+    margin-top: 40px;
+  }
+  footer span { color: #0096C7; }
+
+  /* アクセントライン */
+  .accent-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #0096C7, #FF6B35);
+  }
+</style>
+</head>
+<body>
+
+<div class="accent-bar"></div>
+
+<!-- ヘッダー -->
+<header>
+  <div class="site-title">
+    🌊 沖縄DX現場ラボ
+    <span>難しくない。沖縄発・中小企業のDX実践記</span>
+  </div>
+  <nav>
+    <a href="#">AI活用術</a>
+    <a href="#">業務効率化</a>
+    <a href="#">デザイン制作</a>
+    <a href="#">造園DX</a>
+    <a href="#">お問い合わせ</a>
+  </nav>
+</header>
+
+<!-- ヒーロー -->
+<div class="hero">
+  <h2>現場で使えるAIを、沖縄から発信する</h2>
+  <p>難しい理論より、明日から使える実践。造園・公園管理の現場担当者が実際に試した方法をそのまま紹介します。</p>
+  <a href="#" class="hero-btn">▶ 記事を読む</a>
+</div>
+
+<!-- メインコンテンツ -->
+<div class="container">
+  <main>
+
+    <!-- 記事1 -->
+    <div class="card">
+      <div class="card-img">📋</div>
+      <div class="card-body">
+        <span class="category-label">業務効率化</span>
+        <h3>造園業のKY表をExcelマクロで自動作成する方法【無料テンプレ配布】</h3>
+        <p>毎朝5分かかっていた安全書類が、ボタン1押しで完成するようになった話。現場担当が一人でも回せる仕組みを作りました。</p>
+        <div class="card-meta">2026.04.26 ｜ うえはら</div>
+        <a href="#" class="read-more">続きを読む →</a>
+      </div>
+    </div>
+
+    <!-- 記事2 -->
+    <div class="card">
+      <div class="card-img">🤖</div>
+      <div class="card-body">
+        <span class="category-label">AI活用術</span>
+        <h3>NotebookLM × Excelマクロで造園業のKY表を最強にする方法</h3>
+        <p>AIが危険ポイントを提案して、Excelが自動で印刷フォームを作る。この組み合わせが現場を変える。</p>
+        <div class="card-meta">2026.04.26 ｜ うえはら</div>
+        <a href="#" class="read-more">続きを読む →</a>
+      </div>
+    </div>
+
+    <!-- 記事3 -->
+    <div class="card">
+      <div class="card-img">🌺</div>
+      <div class="card-body">
+        <span class="category-label">造園DX</span>
+        <h3>沖縄の公園管理をDX化してみてわかったこと【現場レポート】</h3>
+        <p>公民連携で公園管理を担当する現場から。紙だらけの業務をデジタル化した実体験をそのまま書きます。</p>
+        <div class="card-meta">2026.04.26 ｜ うえはら</div>
+        <a href="#" class="read-more">続きを読む →</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- サイドバー -->
+  <aside class="sidebar">
+
+    <!-- プロフィール -->
+    <div class="widget">
+      <h4>このブログについて</h4>
+      <div class="profile-icon">🌊</div>
+      <div class="profile-name">うえはら</div>
+      <div class="profile-bio">沖縄在住。公園管理・造園業の現場担当者。Excel VBA・AI・Figmaを使って日々の業務を効率化中。現場目線のDX実践を発信します。</div>
+    </div>
+
+    <!-- タグ -->
+    <div class="widget">
+      <h4>カテゴリ</h4>
+      <span class="tag">AI活用術</span>
+      <span class="tag">Excel・マクロ</span>
+      <span class="tag">造園DX</span>
+      <span class="tag">Figma</span>
+      <span class="tag">公園管理</span>
+      <span class="tag">業務効率化</span>
+      <span class="tag">沖縄</span>
+    </div>
+
+    <!-- CTA -->
+    <div class="widget cta-widget">
+      <h4>お仕事のご相談</h4>
+      <p>AI活用・業務効率化・デザイン制作のご相談はお気軽にどうぞ</p>
+      <a href="#" class="cta-btn">お問い合わせ</a>
+    </div>
+
+  </aside>
+</div>
+
+<!-- フッター -->
+<footer>
+  <p>© 2026 <span>沖縄DX現場ラボ</span> ｜ うえはら</p>
+  <p style="margin-top:8px; font-size:11px;">zouen-dx.com</p>
+</footer>
+
+</body>
+</html>
