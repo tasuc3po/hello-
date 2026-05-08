@@ -54,7 +54,7 @@ app.post('/api/suggest', async (req, res) => {
   }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`KY作成AIツール起動中: http://localhost:${PORT}`);
 });
