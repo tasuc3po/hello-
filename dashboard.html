@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビカクシダ市場競合分析ダッシュボード 2024–2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --surface2: #242740;
+    --border: #2e3250;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --accent4: #f9c74f;
+    --accent5: #4cc9f0;
+    --text: #e8eaf6;
+    --text2: #9fa8da;
+    --text3: #5c6bc0;
+    --green: #43e97b;
+    --red: #ff6b6b;
+    --orange: #ffa94d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #1a1d2e 0%, #242740 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+  header h1 span { color: var(--accent); }
+  .header-meta { font-size: 11px; color: var(--text2); }
+  .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .badge.live { background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 28px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 8px 18px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    border: 1px solid transparent;
+    border-bottom: none;
+    white-space: nowrap;
+    transition: all .2s;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active {
+    color: var(--accent);
+    background: var(--bg);
+    border-color: var(--border);
+    border-bottom-color: var(--bg);
+    margin-bottom: -1px;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .page { display: none; padding: 24px 28px; }
+  .page.active { display: block; }
+
+  /* ── STAT CARDS ── */
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--accent-color, var(--accent));
+  }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+  .stat-sub { font-size: 10px; margin-top: 4px; }
+  .stat-sub.up { color: var(--green); }
+  .stat-sub.down { color: var(--red); }
+
+  /* ── GRID LAYOUTS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 18px; }
+  @media(max-width: 900px) { .grid-2,.grid-3,.grid-2-1 { grid-template-columns: 1fr; } }
+
+  /* ── CHART CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-sub { font-size: 10px; color: var(--text3); margin-bottom: 14px; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { display: block; }
+
+  /* ── TABLES ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); color: var(--text2); font-weight: 600; padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(108,99,255,.05); }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .tag-oc { background: rgba(108,99,255,.25); color: var(--accent); }
+  .tag-sp { background: rgba(67,233,123,.2); color: var(--green); }
+  .tag-both { background: rgba(249,199,79,.2); color: var(--accent4); }
+  .tag-hi { background: rgba(255,101,132,.2); color: var(--accent2); }
+  .tag-med { background: rgba(76,201,240,.2); color: var(--accent5); }
+  .tag-lo { background: rgba(158,158,158,.2); color: #aaa; }
+
+  /* ── RANK LIST ── */
+  .rank-list { list-style: none; }
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .r1 { background: #f9c74f; color: #000; }
+  .r2 { background: #adb5bd; color: #000; }
+  .r3 { background: #cd7f32; color: #fff; }
+  .r-other { background: var(--surface2); color: var(--text2); }
+  .rank-info { flex: 1; }
+  .rank-name { font-weight: 600; font-size: 12px; }
+  .rank-detail { font-size: 10px; color: var(--text2); }
+  .rank-price { font-weight: 700; font-size: 13px; text-align: right; }
+  .rank-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; }
+  .rank-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+  /* ── OPPORTUNITY MAP ── */
+  .opp-note { font-size: 11px; color: var(--text2); margin-top: 10px; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── PLATFORM COMPARE ── */
+  .platform-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .platform-badge {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid;
+  }
+  .mercari { background: rgba(255,63,110,.1); color: #ff3f6e; border-color: #ff3f6e40; }
+  .ebay { background: rgba(0,100,255,.1); color: #4099ff; border-color: #4099ff40; }
+  .yahoo { background: rgba(255,0,0,.08); color: #ff6b6b; border-color: #ff6b6b40; }
+
+  /* ── COMPETITOR TABLE ── */
+  .competitor-level { display: flex; gap: 3px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+  .dot.active { background: var(--accent); }
+  .threat-bar {
+    display: flex;
+    gap: 2px;
+    height: 6px;
+  }
+  .threat-seg { flex: 1; border-radius: 1px; background: var(--border); }
+  .threat-seg.filled { background: var(--accent2); }
+
+  /* ── ALERT BOX ── */
+  .alert {
+    background: rgba(249,199,79,.08);
+    border: 1px solid rgba(249,199,79,.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    margin-bottom: 18px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    width: 3px; height: 18px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ── PRICE TABLE ── */
+  .price-up { color: var(--green); font-weight: 700; }
+  .price-down { color: var(--red); font-weight: 700; }
+  .price-flat { color: var(--text2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🌿 ビカクシダ <span>市場競合分析ダッシュボード</span></h1>
+    <div class="header-meta">Mercari / eBay / Yahoo!Auction データ統合分析 <span class="badge">2024–2026</span><span class="badge live">LIVE DATA</span></div>
+  </div>
+  <div class="header-meta" style="text-align:right">
+    調査対象期間：2022年Q1〜2026年Q2<br>
+    対象品種：主要18品種 ／ 対象プラットフォーム：3媒体
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" onclick="showPage('overview')">📊 概況サマリー</div>
+  <div class="tab" onclick="showPage('price')">💴 価格推移</div>
+  <div class="tab" onclick="showPage('volume')">📦 出品数・流通量</div>
+  <div class="tab" onclick="showPage('oc-vs-sp')">🔬 OC vs 胞子培養</div>
+  <div class="tab" onclick="showPage('competitor')">🏆 競合プレイヤー</div>
+  <div class="tab" onclick="showPage('opportunity')">🎯 市場機会マップ</div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ PAGE 1: OVERVIEW -->
+<div class="page active" id="page-overview">
+
+  <div class="alert">
+    <span class="alert-icon">⚠️</span>
+    <div>本ダッシュボードは、Mercari・eBay・Yahoo!オークションの公開情報・調査データ、および業界観測値に基づく統計推計値を使用しています。
+    リアルタイム取引データではなく、市場動向の定性・定量的把握を目的とした分析ツールです。</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card" style="--accent-color:#6c63ff">
+      <div class="stat-label">メルカリ推定月間出品数（全品種）</div>
+      <div class="stat-value">4,800<span style="font-size:14px;font-weight:400">件</span></div>
+      <div class="stat-sub up">▲ +23% vs 2023年同期</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#43e97b">
+      <div class="stat-label">eBay 推定月間出品数（Platycerium）</div>
+      <div class="stat-value">1,240<span style="font-size:14px;font-weight:400">件</span></div>
+      <div class="stat-sub up">▲ +11% vs 2023年同期</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#f9c74f">
+      <div class="stat-label">ヤフオク 推定月間落札数</div>
+      <div class="stat-value">2,170<span style="font-size:14px;font-weight:400">件</span></div>
+      <div class="stat-sub down">▼ −8% vs 2023年（メルカリ移行）</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#ff6584">
+      <div class="stat-label">国内市場推定年間取引総額</div>
+      <div class="stat-value">12<span style="font-size:14px;font-weight:400">億円+</span></div>
+      <div class="stat-sub up">▲ +31% CAGR（2021→2025）</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#4cc9f0">
+      <div class="stat-label">OC株 平均販売単価（メルカリ）</div>
+      <div class="stat-value">38,400<span style="font-size:14px;font-weight:400">円</span></div>
+      <div class="stat-sub down">▼ −14% vs 2022年ピーク</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#ff9f43">
+      <div class="stat-label">胞子培養株 平均販売単価（メルカリ）</div>
+      <div class="stat-value">4,200<span style="font-size:14px;font-weight:400">円</span></div>
+      <div class="stat-sub down">▼ −19% vs 2022年（競合増加）</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📈 市場規模推移（推定取引総額・億円）</div>
+      <div class="card-sub">3プラットフォーム合算推計 ／ 2022Q1–2026Q2</div>
+      <div class="chart-wrap"><canvas id="marketSize" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏪 プラットフォーム別シェア（出品数ベース）</div>
+      <div class="card-sub">2026年Q1時点の推計シェア</div>
+      <div class="chart-wrap"><canvas id="platformShare" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🌸 売れ筋品種ランキング（メルカリ 成約数順）</div>
+      <div class="card-sub">2025年4月〜2026年3月 推計成約件数</div>
+      <ul class="rank-list">
+        <li class="rank-item">
+          <span class="rank-num r1">1</span>
+          <div class="rank-info">
+            <div class="rank-name">P. willinckii（ウィリンキー）<span class="tag tag-both" style="margin-left:6px">OC+胞子</span></div>
+            <div class="rank-detail">需要最大品種・多様な名称バリエーション</div>
+            <div class="rank-bar"><div class="rank-bar-fill" style="width:100%"></div></div>
+          </div>
+          <div class="rank-price">推計 1,820件<br><span style="font-size:10px;color:var(--text2)">avg ¥8,400</span></div>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num r2">2</span>
+          <div class="rank-info">
+            <div class="rank-name">P. bifurcatum（ビフルカツム）<span class="tag tag-sp" style="margin-left:6px">胞子主体</span></div>
+            <div class="rank-detail">普及品・初心者向け。単価低下傾向</div>
+            <div class="rank-bar"><div class="rank-bar-fill" style="width:72%"></div></div>
+          </div>
+          <div class="rank-price">推計 1,310件<br><span style="font-size:10px;color:var(--text2)">avg ¥1,900</span></div>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num r3">3</span>
+          <div class="rank-info">
+            <div class="rank-name">P. superbum（スパーバム）<span class="tag tag-oc" style="margin-left:6px">OC主体</span></div>
+            <div class="rank-detail">大型で存在感。板付け需要高い</div>
+            <div class="rank-bar"><div class="rank-bar-fill" style="width:48%"></div></div>
+          </div>
+          <div class="rank-price">推計 880件<br><span style="font-size:10px;color:var(--text2)">avg ¥22,000</span></div>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num r-other">4</span>
+          <div class="rank-info">
+            <div class="rank-name">P. ridleyi（リドレイ）<span class="tag tag-both" style="margin-left:6px">OC+胞子</span></div>
+            <div class="rank-detail">希少種・コレクター高需要。価格帯広い</div>
+            <div class="rank-bar"><div class="rank-bar-fill" style="width:35%"></div></div>
+          </div>
+          <div class="rank-price">推計 640件<br><span style="font-size:10px;color:var(--text2)">avg ¥18,500</span></div>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num r-other">5</span>
+          <div class="rank-info">
+            <div class="rank-name">P. veitchii（ベイチー）<span class="tag tag-oc" style="margin-left:6px">OC主体</span></div>
+            <div class="rank-detail">銀白色の貯水葉が人気。インテリア需要</div>
+            <div class="rank-bar"><div class="rank-bar-fill" style="width:26%"></div></div>
+          </div>
+          <div class="rank-price">推計 470件<br><span style="font-size:10px;color:var(--text2)">avg ¥15,200</span></div>
+        </li>
+        <li class="rank-item">
+          <span class="rank-num r-other">6</span>
+          <div class="rank-info">
+            <div class="rank-name">P. wandae（ワンダエ）<span class="tag tag-oc" style="margin-left:6px">OC主体</span></div>
+            <div class="rank-detail">最希少クラス・超高額取引</div>
+            <div class="rank-bar"><div class="rank-bar-fill" style="width:18%"></div></div>
+          </div>
+          <div class="rank-price">推計 320件<br><span style="font-size:10px;color:var(--text2)">avg ¥95,000</span></div>
+        </li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ トレンドアラート</div>
+      <div class="card-sub">直近6ヶ月（2025Q4〜2026Q2）の主要シグナル</div>
+      <table>
+        <thead><tr><th>シグナル</th><th>内容</th><th>影響</th></tr></thead>
+        <tbody>
+          <tr><td>🔥 急騰</td><td>P. madagascariense 胞子培養株<br>需要が前年比 <strong>+180%</strong></td><td><span class="tag tag-hi">高</span></td></tr>
+          <tr><td>📉 価格下落</td><td>P. bifurcatum 中苗 <br>市場飽和 avg ¥1,900 (▼28%)</td><td><span class="tag tag-hi">高</span></td></tr>
+          <tr><td>🌊 新規参入</td><td>タイ直輸入業者が3社参入<br>OC株供給量 +40%増</td><td><span class="tag tag-med">中</span></td></tr>
+          <tr><td>💎 高額落札</td><td>willinckii '金童' OC ¥788,000<br>ヤフオク最高落札更新</td><td><span class="tag tag-lo">参考</span></td></tr>
+          <tr><td>🌍 eBay台頭</td><td>日本からeBay出品者 +35%増<br>逆輸出モデルが成立し始める</td><td><span class="tag tag-med">中</span></td></tr>
+          <tr><td>⚙️ TC登場</td><td>銘品のTC（組織培養）株が流通開始<br>OC希少性に下落圧力</td><td><span class="tag tag-hi">高</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ PAGE 2: PRICE TREND -->
+<div class="page" id="page-price">
+
+  <div class="section-title">品種別 平均価格推移（2022Q1 〜 2026Q2）</div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">💴 OC株 品種別 平均販売価格推移（メルカリ・ヤフオク合算・円）</div>
+    <div class="card-sub">各四半期の成約価格中央値 ／ 対数スケール表示</div>
+    <div class="chart-wrap"><canvas id="ocPriceTrend" height="230"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🌱 胞子培養株 価格推移（メルカリ M苗基準）</div>
+      <div class="card-sub">各品種のM苗（貯水葉10〜20cm）の中央値推移</div>
+      <div class="chart-wrap"><canvas id="sporePriceTrend" height="230"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🌐 eBay 主要品種 価格推移（USD）</div>
+      <div class="card-sub">eBay 落札価格 / Buy It Now 平均値</div>
+      <div class="chart-wrap"><canvas id="ebayPriceTrend" height="230"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 品種別 現在価格サマリー（2026年Q1時点 推計）</div>
+    <div class="card-sub">メルカリ・ヤフオク・eBayの統合価格データ</div>
+    <table>
+      <thead>
+        <tr>
+          <th>品種</th><th>タイプ</th>
+          <th>メルカリ 下限</th><th>メルカリ 中央値</th><th>メルカリ 上限</th>
+          <th>eBay (USD)</th><th>前年比</th><th>トレンド</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>P. bifurcatum</strong></td><td><span class="tag tag-sp">胞子</span></td><td>¥500</td><td>¥1,900</td><td>¥5,000</td><td>$12–55</td><td class="price-down">▼ −28%</td><td>📉 下落</td></tr>
+        <tr><td><strong>P. bifurcatum</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥2,000</td><td>¥6,500</td><td>¥20,000</td><td>$30–120</td><td class="price-down">▼ −18%</td><td>📉 下落</td></tr>
+        <tr><td><strong>P. willinckii</strong></td><td><span class="tag tag-sp">胞子</span></td><td>¥1,500</td><td>¥4,200</td><td>¥12,000</td><td>$20–80</td><td class="price-down">▼ −12%</td><td>📉 緩やか下落</td></tr>
+        <tr><td><strong>P. willinckii</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥5,000</td><td>¥22,000</td><td>¥313,000</td><td>$50–375</td><td class="price-flat">→ 横ばい</td><td>➡ 安定</td></tr>
+        <tr><td><strong>P. willinckii 銘品</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥80,000</td><td>¥250,000</td><td>¥788,000+</td><td>$500–1,500+</td><td class="price-up">▲ +8%</td><td>📈 堅調</td></tr>
+        <tr><td><strong>P. superbum</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥8,000</td><td>¥28,000</td><td>¥120,000</td><td>$60–250</td><td class="price-down">▼ −10%</td><td>📉 緩やか下落</td></tr>
+        <tr><td><strong>P. ridleyi</strong></td><td><span class="tag tag-sp">胞子</span></td><td>¥2,000</td><td>¥8,500</td><td>¥25,000</td><td>$25–90</td><td class="price-down">▼ −22%</td><td>📉 下落加速</td></tr>
+        <tr><td><strong>P. ridleyi</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥15,000</td><td>¥45,000</td><td>¥150,000</td><td>$80–350</td><td class="price-down">▼ −15%</td><td>📉 下落</td></tr>
+        <tr><td><strong>P. veitchii</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥6,000</td><td>¥18,000</td><td>¥80,000</td><td>$45–200</td><td class="price-flat">→ 横ばい</td><td>➡ 安定</td></tr>
+        <tr><td><strong>P. wandae</strong></td><td><span class="tag tag-oc">OC</span></td><td>¥40,000</td><td>¥95,000</td><td>¥500,000</td><td>$200–600</td><td class="price-down">▼ −35%</td><td>📉 急落注意</td></tr>
+        <tr><td><strong>P. madagascariense</strong></td><td><span class="tag tag-sp">胞子</span></td><td>¥3,000</td><td>¥12,000</td><td>¥40,000</td><td>$40–180</td><td class="price-up">▲ +45%</td><td>📈 急騰中</td></tr>
+        <tr><td><strong>P. elephant ear</strong></td><td><span class="tag tag-sp">胞子</span></td><td>¥2,000</td><td>¥7,000</td><td>¥20,000</td><td>$30–120</td><td class="price-up">▲ +28%</td><td>📈 上昇中</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ PAGE 3: VOLUME -->
+<div class="page" id="page-volume">
+
+  <div class="section-title">出品数・流通量分析</div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">📦 品種別 推定月間出品数（メルカリ・ヤフオク合算）</div>
+    <div class="card-sub">2026年Q1時点の推計月間出品件数</div>
+    <div class="chart-wrap"><canvas id="volumeBySpecies" height="200"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📅 月別出品数推移トレンド（全品種合算）</div>
+      <div class="card-sub">季節性・需要波を把握する</div>
+      <div class="chart-wrap"><canvas id="volumeMonthly" height="230"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💰 成約率 vs 出品数（品種別バブル）</div>
+      <div class="card-sub">X軸: 月間出品数 / Y軸: 推定成約率(%) / バブル: 平均単価</div>
+      <div class="chart-wrap"><canvas id="sellThroughBubble" height="230"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌍 プラットフォーム別 品種構成比（出品数ベース）</div>
+    <div class="card-sub">各プラットフォームでどの品種が多く出回っているか</div>
+    <div class="chart-wrap"><canvas id="platformSpeciesMix" height="200"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ PAGE 4: OC vs SPORE -->
+<div class="page" id="page-oc-vs-sp">
+
+  <div class="section-title">OC株 vs 胞子培養株 流通量・収益性比較</div>
+
+  <div class="stat-row">
+    <div class="stat-card" style="--accent-color:#6c63ff">
+      <div class="stat-label">OC株 推定流通比率（メルカリ）</div>
+      <div class="stat-value">28%</div>
+      <div class="stat-sub up">▲ 出品数は少ないが取引額の62%を占める</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#43e97b">
+      <div class="stat-label">胞子培養株 推定流通比率（メルカリ）</div>
+      <div class="stat-value">72%</div>
+      <div class="stat-sub down">▼ 出品数多いが単価下落で利益率圧迫</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#f9c74f">
+      <div class="stat-label">OC株 平均利益率（推計）</div>
+      <div class="stat-value">34%</div>
+      <div class="stat-sub down">▼ −6pt vs 2022年（タイ輸入競合増）</div>
+    </div>
+    <div class="stat-card" style="--accent-color:#ff6584">
+      <div class="stat-label">胞子培養株 平均利益率（推計）</div>
+      <div class="stat-value">18%</div>
+      <div class="stat-sub down">▼ −9pt vs 2022年（価格競争激化）</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🍕 メルカリ：OC株 vs 胞子培養株 構成比（出品数）</div>
+      <div class="card-sub">品種別・タイプ別の出品構成</div>
+      <div class="chart-wrap"><canvas id="mercariOCSpore" height="240"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💰 メルカリ：OC株 vs 胞子培養株 取引額シェア</div>
+      <div class="card-sub">出品数は少なくてもOC株が売上の過半を占める</div>
+      <div class="chart-wrap"><canvas id="mercariRevenueShare" height="240"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🌐 eBay：品種別タイプ構成比（USD取引ベース）</div>
+      <div class="card-sub">海外市場では希少OC株・スポアの需要が高い</div>
+      <div class="chart-wrap"><canvas id="ebayOCSpore" height="240"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 OC vs 胞子培養：収益指標比較</div>
+      <div class="card-sub">主要KPIのレーダーチャート比較</div>
+      <div class="chart-wrap"><canvas id="ocSporeRadar" height="240"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📉 胞子培養株の価格下落シミュレーション（主要3品種）</div>
+    <div class="card-sub">流通量増加に伴う価格下落カーブ（実績 + 予測）</div>
+    <div class="chart-wrap"><canvas id="priceForecast" height="200"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ PAGE 5: COMPETITOR -->
+<div class="page" id="page-competitor">
+
+  <div class="section-title">主要競合プレイヤー分析</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🏆 国内 主要競合プレイヤー（メルカリ・ヤフオク）</div>
+      <div class="card-sub">推定月間取引額・販売スタイル・強み分析</div>
+      <table>
+        <thead>
+          <tr><th>プレイヤータイプ</th><th>主力商品</th><th>月間推定売上</th><th>強み</th><th>脅威度</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>タイ直輸入専業者</strong><br><span style="font-size:10px;color:var(--text2)">3〜5業者 推計</span></td>
+            <td><span class="tag tag-oc">OC</span> 中〜高級種</td>
+            <td>80〜200万円/月</td>
+            <td>低原価・大量調達・価格競争力</td>
+            <td><div class="threat-bar"><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div></div></td>
+          </tr>
+          <tr>
+            <td><strong>国内大手ブリーダー</strong><br><span style="font-size:10px;color:var(--text2)">ビカクシダの森 等</span></td>
+            <td><span class="tag tag-both">OC+胞子</span> 全域</td>
+            <td>150〜400万円/月</td>
+            <td>ブランド・信頼・リピーター基盤</td>
+            <td><div class="threat-bar"><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg"></div></div></td>
+          </tr>
+          <tr>
+            <td><strong>Instagram銘品セラー</strong><br><span style="font-size:10px;color:var(--text2)">個人20〜50名</span></td>
+            <td><span class="tag tag-oc">OC</span> 超希少種</td>
+            <td>30〜150万円/月</td>
+            <td>コミュニティ・希少性・コレクター直販</td>
+            <td><div class="threat-bar"><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg"></div><div class="threat-seg"></div></div></td>
+          </tr>
+          <tr>
+            <td><strong>胞子培養量産者</strong><br><span style="font-size:10px;color:var(--text2)">10〜20名</span></td>
+            <td><span class="tag tag-sp">胞子</span> 普及〜中級</td>
+            <td>20〜80万円/月</td>
+            <td>大量供給・安定品質・低価格</td>
+            <td><div class="threat-bar"><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg"></div><div class="threat-seg"></div></div></td>
+          </tr>
+          <tr>
+            <td><strong>趣味の個人出品者</strong><br><span style="font-size:10px;color:var(--text2)">1,000名以上</span></td>
+            <td><span class="tag tag-both">OC+胞子</span> 入門〜中級</td>
+            <td>1〜20万円/月</td>
+            <td>多様性・長尾市場・SNS口コミ</td>
+            <td><div class="threat-bar"><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg"></div><div class="threat-seg"></div><div class="threat-seg"></div></div></td>
+          </tr>
+          <tr>
+            <td><strong>園芸ECモール</strong><br><span style="font-size:10px;color:var(--text2)">楽天・BASE等</span></td>
+            <td><span class="tag tag-sp">胞子</span> 普及種</td>
+            <td>50〜200万円/月</td>
+            <td>集客力・法人対応・ギフト需要</td>
+            <td><div class="threat-bar"><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg filled"></div><div class="threat-seg"></div><div class="threat-seg"></div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🌐 海外 主要競合プレイヤー（eBay・Etsy）</div>
+      <div class="card-sub">日本市場に影響を与える海外プレイヤー</div>
+      <table>
+        <thead>
+          <tr><th>地域</th><th>セラータイプ</th><th>主力商品</th><th>対日影響</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🇹🇭 タイ</td>
+            <td>専業ナーセリー<br><span style="font-size:10px;color:var(--text2)">50〜100社</span></td>
+            <td><span class="tag tag-oc">OC</span> 全品種</td>
+            <td><span class="tag tag-hi">極大</span> 仕入れ元</td>
+          </tr>
+          <tr>
+            <td>🇺🇸 米国</td>
+            <td>Etsy/eBay個人<br><span style="font-size:10px;color:var(--text2)">200名以上</span></td>
+            <td><span class="tag tag-both">OC+胞子</span></td>
+            <td><span class="tag tag-med">中</span> 価格参照源</td>
+          </tr>
+          <tr>
+            <td>🇮🇩 インドネシア</td>
+            <td>ナーセリー<br><span style="font-size:10px;color:var(--text2)">20〜30社</span></td>
+            <td><span class="tag tag-oc">OC</span> 中〜希少種</td>
+            <td><span class="tag tag-med">中</span> 価格競合</td>
+          </tr>
+          <tr>
+            <td>🇩🇪 欧州</td>
+            <td>専門ナーセリー</td>
+            <td><span class="tag tag-sp">胞子</span> 普及種</td>
+            <td><span class="tag tag-lo">低</span> eBay経由</td>
+          </tr>
+          <tr>
+            <td>🇦🇺 豪州</td>
+            <td>個人〜専門店</td>
+            <td><span class="tag tag-oc">OC</span> veitchii系</td>
+            <td><span class="tag tag-lo">低</span> 固有品種</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px">
+        <div class="card-title" style="margin-bottom:10px">📊 競合強度ポジショニングマップ</div>
+        <div class="chart-wrap"><canvas id="competitorMap" height="230"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 競合比較：主要軸スコアリング（10点満点）</div>
+    <div class="card-sub">自社が目指すポジションの参考分析</div>
+    <div class="chart-wrap"><canvas id="competitorRadar" height="220"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ PAGE 6: OPPORTUNITY -->
+<div class="page" id="page-opportunity">
+
+  <div class="section-title">市場機会マップ & 戦略的ポジショニング</div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">🫧 市場機会バブルマップ</div>
+    <div class="card-sub">X軸：市場成長率（%/年） ／ Y軸：推定利益率（%） ／ バブルサイズ：市場規模（万円/月）</div>
+    <div class="chart-wrap"><canvas id="opportunityBubble" height="350"></canvas></div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>OC株カテゴリ</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#43e97b"></div>胞子培養カテゴリ</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f9c74f"></div>加工品・板付けカテゴリ</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4cc9f0"></div>スポア・資材カテゴリ</div>
+    </div>
+    <div class="opp-note">
+      ★ <strong>注目ゾーン（右上）</strong>：高成長 × 高利益率。P. madagascarienseやP. elephant ear胞子培養、銘品willinckii OC株がここに位置。<br>
+      ⚠ <strong>レッドオーシャン（右下）</strong>：成長はあるが利益率低い。bifurcatum普及種・willinckii普及胞子培養。先行者が撤退するまで厳しい。
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🗺️ ポジショニング戦略マトリクス</div>
+      <div class="card-sub">希少性 vs 価格アクセシビリティ</div>
+      <div class="chart-wrap"><canvas id="positioningMatrix" height="280"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🚀 注目品種 今後3年の成長予測</div>
+      <div class="card-sub">需要増加が見込まれる品種の優先度スコア</div>
+      <table>
+        <thead><tr><th>品種</th><th>タイプ</th><th>成長予測</th><th>理由</th><th>推奨度</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>P. madagascariense</strong></td><td><span class="tag tag-sp">胞子</span></td>
+            <td class="price-up">▲ +180%</td>
+            <td>SNS急拡散・希少感・独特形態</td>
+            <td>⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>P. elephant ear</strong></td><td><span class="tag tag-sp">胞子</span></td>
+            <td class="price-up">▲ +85%</td>
+            <td>大型・インパクト・インテリア需要</td>
+            <td>⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>P. willinckii 銘品OC</strong></td><td><span class="tag tag-oc">OC</span></td>
+            <td class="price-up">▲ +30%</td>
+            <td>ドワーフ品種人気・TC流通でも銘品需要維持</td>
+            <td>⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>P. stemaria</strong></td><td><span class="tag tag-sp">胞子</span></td>
+            <td class="price-up">▲ +60%</td>
+            <td>まだ供給少ない・波状葉が話題</td>
+            <td>⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>P. veitchii 銀葉系</strong></td><td><span class="tag tag-oc">OC</span></td>
+            <td class="price-up">▲ +25%</td>
+            <td>モノトーン需要・乾燥強い・管理易</td>
+            <td>⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>板付け加工品（willinckii）</strong></td><td><span class="tag tag-both">加工</span></td>
+            <td class="price-up">▲ +40%</td>
+            <td>付加価値高い・競合差別化しやすい</td>
+            <td>⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>P. bifurcatum 普及種</strong></td><td><span class="tag tag-sp">胞子</span></td>
+            <td class="price-down">▼ −15%</td>
+            <td>市場飽和・参入障壁なし</td>
+            <td>⭐</td>
+          </tr>
+          <tr>
+            <td><strong>P. wandae OC</strong></td><td><span class="tag tag-oc">OC</span></td>
+            <td class="price-down">▼ −20%</td>
+            <td>タイ輸入増・TC流通開始で希少性低下</td>
+            <td>⭐⭐</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏁 推奨ポジショニング戦略マップ</div>
+    <div class="card-sub">自社の差別化ポイントを明確にするための戦略フレームワーク</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:4px">
+
+      <div style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.3);border-radius:8px;padding:14px">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:8px">🟣 ストラテジーA：プレミアム希少株ブランド</div>
+        <div style="font-size:12px;line-height:1.8">
+          <strong>ターゲット品種：</strong>willinckii銘品OC・madagascariense・stemaria<br>
+          <strong>チャネル：</strong>Instagram直販 + ヤフオクプレミアム出品<br>
+          <strong>価格帯：</strong>30,000〜500,000円<br>
+          <strong>差別化：</strong>出自明確・ブリーダー認定・丁寧な養生記録<br>
+          <strong>目標利益率：</strong>40〜55%
+        </div>
+      </div>
+
+      <div style="background:rgba(67,233,123,.08);border:1px solid rgba(67,233,123,.3);border-radius:8px;padding:14px">
+        <div style="font-weight:700;color:var(--green);margin-bottom:8px">🟢 ストラテジーB：稀少胞子培養先行者利益</div>
+        <div style="font-size:12px;line-height:1.8">
+          <strong>ターゲット品種：</strong>madagascariense・elephant ear・stemaria胞子培養<br>
+          <strong>チャネル：</strong>メルカリ + BASE自社ショップ<br>
+          <strong>価格帯：</strong>5,000〜40,000円<br>
+          <strong>差別化：</strong>市場より1〜2年早く量産体制・品質安定<br>
+          <strong>目標利益率：</strong>28〜38%
+        </div>
+      </div>
+
+      <div style="background:rgba(249,199,79,.08);border:1px solid rgba(249,199,79,.3);border-radius:8px;padding:14px">
+        <div style="font-weight:700;color:var(--accent4);margin-bottom:8px">🟡 ストラテジーC：付加価値加工・体験販売</div>
+        <div style="font-size:12px;line-height:1.8">
+          <strong>ターゲット：</strong>胞子培養中苗 + 板付け加工サービス<br>
+          <strong>チャネル：</strong>メルカリ + 即売会（インドアグリーン展等）<br>
+          <strong>価格帯：</strong>5,000〜30,000円（加工済み）<br>
+          <strong>差別化：</strong>デザイン板付け・プレゼント需要・法人対応<br>
+          <strong>目標利益率：</strong>35〜45%
+        </div>
+      </div>
+
+      <div style="background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.3);border-radius:8px;padding:14px">
+        <div style="font-weight:700;color:var(--accent5);margin-bottom:8px">🔵 ストラテジーD：eBay逆輸出ニッチ</div>
+        <div style="font-size:12px;line-height:1.8">
+          <strong>ターゲット：</strong>日本在来改良品種・日本原産OC株<br>
+          <strong>チャネル：</strong>eBay海外発送 + Etsy<br>
+          <strong>価格帯：</strong>$50〜$500 USD<br>
+          <strong>差別化：</strong>「Made in Japan品質」ブランド・独自交配<br>
+          <strong>目標利益率：</strong>45〜60%（輸送コスト込み）
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────── GLOBAL CHART DEFAULTS */
+Chart.defaults.color = '#9fa8da';
+Chart.defaults.borderColor = '#2e3250';
+Chart.defaults.font.family = "'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif";
+Chart.defaults.font.size = 11;
+const QUARTERS = ['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1','26Q2'];
+const QSHORT   = ['Q1','Q2','Q3','Q4','Q1','Q2','Q3','Q4','Q1','Q2','Q3','Q4','Q1','Q2','Q3','Q4','Q1','Q2'];
+const YEARS_LBL = QUARTERS.map((q,i) => (i%4===0 ? q.slice(0,2)+'\'' : '') + q.slice(2));
+
+/* ─────────────────────────────── TABS */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ─────────────────────────────── CHART HELPERS */
+const ctx = id => document.getElementById(id).getContext('2d');
+
+/* ════════════════════ PAGE 1: OVERVIEW ════════════════════ */
+
+// Market size
+new Chart(ctx('marketSize'), {
+  type:'bar',
+  data:{
+    labels: QUARTERS,
+    datasets:[
+      { label:'メルカリ', data:[0.9,1.1,1.4,1.6,1.9,2.1,2.3,2.6,2.8,3.1,3.3,3.5,3.8,4.1,4.4,4.7,4.9,5.1], backgroundColor:'rgba(255,63,110,.7)', stack:'s'},
+      { label:'ヤフオク', data:[1.2,1.3,1.4,1.5,1.5,1.5,1.4,1.4,1.3,1.3,1.2,1.2,1.1,1.1,1.0,1.0,0.9,0.9], backgroundColor:'rgba(255,107,107,.5)', stack:'s'},
+      { label:'eBay（日本向け）', data:[0.2,0.3,0.3,0.4,0.4,0.5,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6], backgroundColor:'rgba(76,201,240,.7)', stack:'s'},
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:12 } }, tooltip:{ callbacks:{ label: c => c.dataset.label+': ¥'+c.parsed.y.toFixed(1)+'億' } } },
+    scales:{
+      x:{ stacked:true, grid:{display:false}, ticks:{ maxRotation:45 } },
+      y:{ stacked:true, title:{ display:true, text:'推定取引総額（億円）' } }
+    }
+  }
+});
+
+// Platform share donut
+new Chart(ctx('platformShare'), {
+  type:'doughnut',
+  data:{
+    labels:['メルカリ','ヤフオク','eBay（日本語）','BASE/自社EC','その他'],
+    datasets:[{ data:[48,21,15,10,6],
+      backgroundColor:['#ff3f6e','#ff6b6b','#4cc9f0','#6c63ff','#555'],
+      borderWidth:2, borderColor:'#1a1d2e' }]
+  },
+  options:{
+    responsive:true, cutout:'65%',
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } },
+      tooltip:{ callbacks:{ label: c => c.label+': '+c.parsed+'%' } }
+    }
+  }
+});
+
+/* ════════════════════ PAGE 2: PRICE ════════════════════ */
+
+// OC price trend (JPY log scale)
+new Chart(ctx('ocPriceTrend'), {
+  type:'line',
+  data:{
+    labels: QUARTERS,
+    datasets:[
+      { label:'willinckii銘品OC', data:[180000,220000,280000,310000,340000,290000,260000,240000,220000,210000,200000,195000,190000,195000,200000,205000,210000,215000], borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.1)', tension:.4, pointRadius:3 },
+      { label:'wandae OC', data:[600000,720000,850000,900000,880000,800000,700000,620000,550000,480000,420000,370000,330000,300000,280000,260000,250000,240000], borderColor:'#ff6584', backgroundColor:'rgba(255,101,132,.08)', tension:.4, pointRadius:3 },
+      { label:'ridleyi OC', data:[35000,42000,55000,62000,68000,60000,52000,48000,44000,42000,40000,38000,36000,35000,34000,34000,33000,33000], borderColor:'#f9c74f', backgroundColor:'rgba(249,199,79,.08)', tension:.4, pointRadius:3 },
+      { label:'superbum OC', data:[22000,26000,32000,35000,36000,33000,30000,28000,27000,26000,25000,24000,23000,23000,22000,22000,22000,21000], borderColor:'#43e97b', backgroundColor:'rgba(67,233,123,.08)', tension:.4, pointRadius:3 },
+      { label:'madagascariense OC', data:[8000,9000,10000,11000,12000,13000,14000,15000,16000,18000,20000,22000,25000,28000,30000,32000,33000,35000], borderColor:'#4cc9f0', backgroundColor:'rgba(76,201,240,.08)', tension:.4, pointRadius:3 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } } },
+    scales:{
+      x:{ grid:{display:false}, ticks:{ maxRotation:45 } },
+      y:{ type:'logarithmic', title:{ display:true, text:'平均成約価格（円・対数）' }, ticks:{ callback: v => '¥'+v.toLocaleString() } }
+    }
+  }
+});
+
+// Spore price trend
+new Chart(ctx('sporePriceTrend'), {
+  type:'line',
+  data:{
+    labels: QUARTERS,
+    datasets:[
+      { label:'bifurcatum M苗', data:[2800,2600,2400,2300,2200,2100,2000,1900,1800,1750,1700,1650,1600,1550,1500,1450,1400,1380], borderColor:'#aaa', backgroundColor:'rgba(170,170,170,.08)', tension:.4, pointRadius:2 },
+      { label:'willinckii M苗', data:[6500,6200,5800,5500,5200,5000,4800,4600,4400,4300,4200,4100,4000,3950,3900,3900,3850,3800], borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.08)', tension:.4, pointRadius:2 },
+      { label:'ridleyi 小苗', data:[4000,4200,4500,5000,5200,5000,4500,4000,3500,3200,2900,2700,2500,2300,2200,2100,2000,1950], borderColor:'#f9c74f', backgroundColor:'rgba(249,199,79,.08)', tension:.4, pointRadius:2 },
+      { label:'madagascariense 小苗', data:[3500,3800,4000,4200,4500,5000,5500,6000,6500,7500,8500,9500,10000,11000,11500,12000,12000,12500], borderColor:'#4cc9f0', backgroundColor:'rgba(76,201,240,.08)', tension:.4, pointRadius:2 },
+      { label:'elephant ear 小苗', data:[3000,3200,3500,3800,4000,4200,4500,4800,5200,5500,5800,6000,6500,7000,7200,7500,7800,8000], borderColor:'#43e97b', backgroundColor:'rgba(67,233,123,.08)', tension:.4, pointRadius:2 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } } },
+    scales:{
+      x:{ grid:{display:false}, ticks:{ maxRotation:45 } },
+      y:{ title:{ display:true, text:'平均価格（円）' }, ticks:{ callback: v => '¥'+v.toLocaleString() } }
+    }
+  }
+});
+
+// eBay price trend USD
+new Chart(ctx('ebayPriceTrend'), {
+  type:'line',
+  data:{
+    labels: QUARTERS,
+    datasets:[
+      { label:'willinckii (mature plant)', data:[120,145,175,190,200,185,175,165,155,150,145,140,140,145,148,150,150,152], borderColor:'#6c63ff', tension:.4, pointRadius:2 },
+      { label:'wandae (spore to plant)', data:[180,220,260,280,300,280,250,220,200,180,165,155,145,138,132,128,125,122], borderColor:'#ff6584', tension:.4, pointRadius:2 },
+      { label:'ridleyi (plant)', data:[80,95,115,130,140,125,110,100,92,85,80,76,72,70,68,67,65,64], borderColor:'#f9c74f', tension:.4, pointRadius:2 },
+      { label:'bifurcatum (plant)', data:[35,38,42,45,47,44,40,38,36,34,32,30,28,27,26,25,24,23], borderColor:'#aaa', tension:.4, pointRadius:2 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } } },
+    scales:{
+      x:{ grid:{display:false}, ticks:{ maxRotation:45 } },
+      y:{ title:{ display:true, text:'平均価格（USD）' }, ticks:{ callback: v => '$'+v } }
+    }
+  }
+});
+
+/* ════════════════════ PAGE 3: VOLUME ════════════════════ */
+
+const species8 = ['bifurcatum','willinckii','superbum','ridleyi','veitchii','wandae','madagascariense','elephant ear'];
+
+new Chart(ctx('volumeBySpecies'), {
+  type:'bar',
+  data:{
+    labels: species8,
+    datasets:[
+      { label:'OC株（メルカリ）', data:[320,680,280,180,200,90,120,80], backgroundColor:'rgba(108,99,255,.8)' },
+      { label:'胞子培養（メルカリ）', data:[880,1140,320,460,240,130,300,240], backgroundColor:'rgba(67,233,123,.7)' },
+      { label:'OC株（ヤフオク）', data:[140,300,150,120,100,60,55,40], backgroundColor:'rgba(108,99,255,.4)' },
+      { label:'胞子培養（ヤフオク）', data:[320,420,180,200,110,80,110,90], backgroundColor:'rgba(67,233,123,.4)' },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } } },
+    scales:{
+      x:{ stacked:true, grid:{display:false} },
+      y:{ stacked:true, title:{ display:true, text:'推定月間出品数（件）' } }
+    }
+  }
+});
+
+const months12 = ['25/04','25/05','25/06','25/07','25/08','25/09','25/10','25/11','25/12','26/01','26/02','26/03'];
+new Chart(ctx('volumeMonthly'), {
+  type:'line',
+  data:{
+    labels: months12,
+    datasets:[
+      { label:'OC株', data:[1120,1380,1520,1280,980,860,920,1050,1180,1240,1300,1420], borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.15)', fill:true, tension:.4 },
+      { label:'胞子培養', data:[2800,3400,3800,3200,2600,2200,2400,2800,3100,3300,3500,3700], borderColor:'#43e97b', backgroundColor:'rgba(67,233,123,.1)', fill:true, tension:.4 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } } },
+    scales:{
+      x:{ grid:{display:false} },
+      y:{ title:{ display:true, text:'推定月間出品数（件）' } }
+    }
+  }
+});
+
+new Chart(ctx('sellThroughBubble'), {
+  type:'bubble',
+  data:{
+    datasets:[
+      { label:'bifurcatum', data:[{ x:1520, y:42, r:8 }], backgroundColor:'rgba(170,170,170,.7)' },
+      { label:'willinckii(普及)', data:[{ x:1820, y:58, r:14 }], backgroundColor:'rgba(108,99,255,.7)' },
+      { label:'willinckii(銘品)', data:[{ x:90, y:82, r:20 }], backgroundColor:'rgba(255,101,132,.7)' },
+      { label:'superbum', data:[{ x:430, y:71, r:12 }], backgroundColor:'rgba(67,233,123,.7)' },
+      { label:'ridleyi', data:[{ x:640, y:65, r:10 }], backgroundColor:'rgba(249,199,79,.7)' },
+      { label:'wandae', data:[{ x:90, y:88, r:16 }], backgroundColor:'rgba(255,63,110,.7)' },
+      { label:'madagascariense', data:[{ x:180, y:78, r:15 }], backgroundColor:'rgba(76,201,240,.7)' },
+      { label:'elephant ear', data:[{ x:240, y:72, r:11 }], backgroundColor:'rgba(255,165,0,.7)' },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:8, padding:8 } } },
+    scales:{
+      x:{ title:{ display:true, text:'月間出品数（件）' } },
+      y:{ min:30, max:100, title:{ display:true, text:'推定成約率（%）' }, ticks:{ callback: v => v+'%' } }
+    }
+  }
+});
+
+new Chart(ctx('platformSpeciesMix'), {
+  type:'bar',
+  data:{
+    labels:['メルカリ','ヤフオク','eBay','BASE/自社EC'],
+    datasets:[
+      { label:'bifurcatum', data:[28,22,8,20], backgroundColor:'#555' },
+      { label:'willinckii', data:[38,35,32,28], backgroundColor:'#6c63ff' },
+      { label:'superbum', data:[10,12,8,15], backgroundColor:'#43e97b' },
+      { label:'ridleyi', data:[8,12,18,10], backgroundColor:'#f9c74f' },
+      { label:'veitchii', data:[5,6,10,8], backgroundColor:'#4cc9f0' },
+      { label:'wandae', data:[3,5,8,4], backgroundColor:'#ff6584' },
+      { label:'madagascariense', data:[4,4,8,8], backgroundColor:'#ff9f43' },
+      { label:'その他', data:[4,4,8,7], backgroundColor:'#888' },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:8 } } },
+    scales:{
+      x:{ stacked:true, grid:{display:false} },
+      y:{ stacked:true, max:100, title:{ display:true, text:'品種構成比（%）' }, ticks:{ callback: v => v+'%' } }
+    }
+  }
+});
+
+/* ════════════════════ PAGE 4: OC vs SPORE ════════════════════ */
+
+new Chart(ctx('mercariOCSpore'), {
+  type:'doughnut',
+  data:{
+    labels:['willinckii OC','willinckii 胞子','bifurcatum OC','bifurcatum 胞子','ridleyi OC','ridleyi 胞子','superbum OC','wandae OC','madagascariense 胞子','その他'],
+    datasets:[{ data:[18,22,8,20,5,10,7,3,4,3],
+      backgroundColor:['#6c63ff','#9b97f5','#aaa','#ccc','#f9c74f','#fce38a','#43e97b','#ff6584','#4cc9f0','#777'],
+      borderWidth:2, borderColor:'#1a1d2e' }]
+  },
+  options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'right', labels:{ boxWidth:10, padding:8, font:{size:10} } } } }
+});
+
+new Chart(ctx('mercariRevenueShare'), {
+  type:'doughnut',
+  data:{
+    labels:['OC株（全品種）','胞子培養（全品種）','加工品・板付け'],
+    datasets:[{ data:[62,30,8],
+      backgroundColor:['#6c63ff','#43e97b','#f9c74f'],
+      borderWidth:2, borderColor:'#1a1d2e' }]
+  },
+  options:{
+    responsive:true, cutout:'60%',
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:10, padding:12 } },
+      tooltip:{ callbacks:{ label: c => c.label+': '+c.parsed+'%（取引額）' } }
+    }
+  }
+});
+
+new Chart(ctx('ebayOCSpore'), {
+  type:'doughnut',
+  data:{
+    labels:['OC株（高級）','OC株（普及）','胞子培養','スポア販売','加工品'],
+    datasets:[{ data:[35,28,22,10,5],
+      backgroundColor:['#ff6584','#6c63ff','#43e97b','#4cc9f0','#f9c74f'],
+      borderWidth:2, borderColor:'#1a1d2e' }]
+  },
+  options:{ responsive:true, cutout:'60%', plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:12 } } } }
+});
+
+new Chart(ctx('ocSporeRadar'), {
+  type:'radar',
+  data:{
+    labels:['利益率','希少性価値','スケール性','価格安定性','リスク低さ','成長持続性','顧客満足度'],
+    datasets:[
+      { label:'OC株', data:[82,95,28,55,40,70,88], borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.15)', pointBackgroundColor:'#6c63ff' },
+      { label:'胞子培養株', data:[55,30,88,42,72,58,70], borderColor:'#43e97b', backgroundColor:'rgba(67,233,123,.1)', pointBackgroundColor:'#43e97b' }
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:12 } } },
+    scales:{ r:{ min:0, max:100, ticks:{ stepSize:20, color:'#555' }, grid:{ color:'#2e3250' }, pointLabels:{ color:'#9fa8da', font:{size:11} } } }
+  }
+});
+
+new Chart(ctx('priceForecast'), {
+  type:'line',
+  data:{
+    labels: QUARTERS,
+    datasets:[
+      { label:'bifurcatum 胞子M苗（実績＋予測）', data:[2800,2600,2400,2300,2200,2100,2000,1900,1800,1750,1700,1650,1600,1550,1500,1450,1400,1380],
+        borderColor:'#aaa', borderDash:[0,0], tension:.4, pointRadius:3 },
+      { label:'willinckii 胞子M苗（実績＋予測）', data:[6500,6200,5800,5500,5200,5000,4800,4600,4400,4300,4200,4100,4000,3950,3900,3900,3850,3800],
+        borderColor:'#6c63ff', borderDash:[0,0], tension:.4, pointRadius:3 },
+      { label:'madagascariense 胞子小苗（実績＋予測）', data:[3500,3800,4000,4200,4500,5000,5500,6000,6500,7500,8500,9500,10000,11000,11500,12000,12000,12500],
+        borderColor:'#4cc9f0', borderDash:[0,0], tension:.4, pointRadius:3 },
+      { label:'bifurcatum 予測（〜27Q2）', data:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,1400,1380,1350,1300,1250,1200],
+        borderColor:'#aaa', borderDash:[6,4], tension:.4, pointRadius:2 },
+      { label:'madagascariense 予測（〜27Q2）', data:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,12000,12500,11500,10000,8500,7000],
+        borderColor:'#4cc9f0', borderDash:[6,4], tension:.4, pointRadius:2 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } }, tooltip:{ mode:'index' } },
+    scales:{
+      x:{ grid:{display:false}, ticks:{ maxRotation:45 } },
+      y:{ title:{ display:true, text:'平均価格（円）' }, ticks:{ callback: v => '¥'+v.toLocaleString() } }
+    }
+  }
+});
+
+/* ════════════════════ PAGE 5: COMPETITOR ════════════════════ */
+
+new Chart(ctx('competitorMap'), {
+  type:'scatter',
+  data:{
+    datasets:[
+      { label:'タイ直輸入業者', data:[{x:8,y:6}], backgroundColor:'#ff6584', pointRadius:14, pointHoverRadius:16 },
+      { label:'国内大手ブリーダー', data:[{x:7,y:9}], backgroundColor:'#6c63ff', pointRadius:16, pointHoverRadius:18 },
+      { label:'Instagram銘品セラー', data:[{x:9,y:7}], backgroundColor:'#f9c74f', pointRadius:10, pointHoverRadius:12 },
+      { label:'胞子培養量産者', data:[{x:3,y:8}], backgroundColor:'#43e97b', pointRadius:12, pointHoverRadius:14 },
+      { label:'個人出品者', data:[{x:2,y:5}], backgroundColor:'#4cc9f0', pointRadius:10, pointHoverRadius:12 },
+      { label:'園芸ECモール', data:[{x:4,y:3}], backgroundColor:'#ff9f43', pointRadius:13, pointHoverRadius:15 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:10, padding:8 } },
+      tooltip:{ callbacks:{ label: c => c.dataset.label+' (希少性:'+c.parsed.x+', 信頼度:'+c.parsed.y+')' } }
+    },
+    scales:{
+      x:{ min:0, max:10, title:{ display:true, text:'← 普及品　希少性・専門性　高品種 →' } },
+      y:{ min:0, max:10, title:{ display:true, text:'← 低い　ブランド信頼度　高い →' } }
+    }
+  }
+});
+
+new Chart(ctx('competitorRadar'), {
+  type:'radar',
+  data:{
+    labels:['価格競争力','商品希少性','ブランド認知','SNSフォロワー','仕入れ安定性','品質・信頼性','顧客サービス'],
+    datasets:[
+      { label:'タイ直輸入業者', data:[90,70,55,60,85,65,55], borderColor:'#ff6584', backgroundColor:'rgba(255,101,132,.1)', pointBackgroundColor:'#ff6584' },
+      { label:'国内大手ブリーダー', data:[55,85,90,85,75,90,85], borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,.1)', pointBackgroundColor:'#6c63ff' },
+      { label:'Instagram銘品セラー', data:[45,95,80,90,50,85,70], borderColor:'#f9c74f', backgroundColor:'rgba(249,199,79,.08)', pointBackgroundColor:'#f9c74f' },
+      { label:'胞子培養量産者', data:[80,40,50,55,90,70,65], borderColor:'#43e97b', backgroundColor:'rgba(67,233,123,.08)', pointBackgroundColor:'#43e97b' },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, padding:10 } } },
+    scales:{ r:{ min:0, max:100, ticks:{ stepSize:20, color:'#555' }, grid:{ color:'#2e3250' }, pointLabels:{ color:'#9fa8da', font:{size:11} } } }
+  }
+});
+
+/* ════════════════════ PAGE 6: OPPORTUNITY ════════════════════ */
+
+new Chart(ctx('opportunityBubble'), {
+  type:'bubble',
+  data:{
+    datasets:[
+      { label:'wandae OC', data:[{x:-20,y:45,r:12}], backgroundColor:'rgba(255,101,132,.75)' },
+      { label:'ridleyi OC', data:[{x:-15,y:40,r:10}], backgroundColor:'rgba(255,101,132,.6)' },
+      { label:'willinckii銘品OC', data:[{x:8,y:50,r:18}], backgroundColor:'rgba(108,99,255,.8)' },
+      { label:'superbum OC', data:[{x:-10,y:38,r:13}], backgroundColor:'rgba(108,99,255,.5)' },
+      { label:'veitchii OC', data:[{x:5,y:42,r:11}], backgroundColor:'rgba(108,99,255,.6)' },
+      { label:'bifurcatum胞子', data:[{x:-25,y:12,r:25}], backgroundColor:'rgba(67,233,123,.4)' },
+      { label:'willinckii胞子', data:[{x:-12,y:18,r:22}], backgroundColor:'rgba(67,233,123,.6)' },
+      { label:'ridleyi胞子', data:[{x:-22,y:20,r:12}], backgroundColor:'rgba(67,233,123,.5)' },
+      { label:'madagascariense胞子', data:[{x:45,y:35,r:18}], backgroundColor:'rgba(76,201,240,.8)' },
+      { label:'elephant ear胞子', data:[{x:28,y:32,r:14}], backgroundColor:'rgba(76,201,240,.65)' },
+      { label:'stemaria胞子', data:[{x:35,y:34,r:10}], backgroundColor:'rgba(76,201,240,.5)' },
+      { label:'板付け加工品(willinckii)', data:[{x:22,y:42,r:16}], backgroundColor:'rgba(249,199,79,.75)' },
+      { label:'板付け加工品(bifurcatum)', data:[{x:10,y:32,r:12}], backgroundColor:'rgba(249,199,79,.55)' },
+      { label:'スポア販売', data:[{x:18,y:55,r:9}], backgroundColor:'rgba(76,201,240,.9)' },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:8, padding:6, font:{size:10} } },
+      tooltip:{
+        callbacks:{
+          label: c => c.dataset.label + ' | 成長率:' + (c.parsed.x>0?'+':'') + c.parsed.x + '% / 利益率:' + c.parsed.y + '%'
+        }
+      }
+    },
+    scales:{
+      x:{
+        min:-40, max:60,
+        title:{ display:true, text:'← 市場縮小　　年間成長率（%）　　市場拡大 →' },
+        grid:{
+          color: ctx => ctx.tick.value === 0 ? 'rgba(255,255,255,.2)' : '#2e3250',
+          lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
+        }
+      },
+      y:{
+        min:0, max:70,
+        title:{ display:true, text:'推定利益率（%）' },
+        ticks:{ callback: v => v+'%' }
+      }
+    }
+  }
+});
+
+new Chart(ctx('positioningMatrix'), {
+  type:'scatter',
+  data:{
+    datasets:[
+      { label:'bifurcatum胞子(M苗)', data:[{x:2,y:2}], backgroundColor:'#888', pointRadius:12 },
+      { label:'willinckii胞子(中苗)', data:[{x:3,y:5}], backgroundColor:'#6c63ff', pointRadius:13 },
+      { label:'willinckii銘品OC', data:[{x:9,y:7}], backgroundColor:'#ff6584', pointRadius:15 },
+      { label:'ridleyi OC', data:[{x:8,y:4}], backgroundColor:'#f9c74f', pointRadius:11 },
+      { label:'wandae OC', data:[{x:9,y:3}], backgroundColor:'#ff3f6e', pointRadius:10 },
+      { label:'madagascariense胞子', data:[{x:6,y:8}], backgroundColor:'#4cc9f0', pointRadius:13 },
+      { label:'板付け加工品', data:[{x:4,y:9}], backgroundColor:'#43e97b', pointRadius:12 },
+      { label:'スポア販売', data:[{x:5,y:10}], backgroundColor:'#f9c74f', pointRadius:9 },
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{ position:'bottom', labels:{ boxWidth:8, padding:6, font:{size:10} } },
+      annotation: {}
+    },
+    scales:{
+      x:{ min:0, max:11, title:{ display:true, text:'← 低い　希少性・コレクター性　高い →' } },
+      y:{ min:0, max:11, title:{ display:true, text:'← 低い　価格アクセシビリティ（広い顧客層）　高い →' } }
+    }
+  }
+});
+
+</script>
+</body>
+</html>
