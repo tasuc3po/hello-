@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沖縄県議会議員マップ 2024</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --surface2: #242740;
+    --border: #2e3250;
+    --text: #e8eaf6;
+    --text2: #9fa8da;
+    --text3: #5c6bc0;
+    --accent: #6c63ff;
+
+    /* 党派カラー */
+    --ldp:    #e53935;  /* 自由民主党 */
+    --komeito:#f9c74f;  /* 公明党 */
+    --cdp:    #1565c0;  /* 立憲民主党 */
+    --jcp:    #c62828;  /* 日本共産党 */
+    --sdp:    #e91e63;  /* 社会民主党 */
+    --ssd:    #00897b;  /* 沖縄社会大衆党 */
+    --ishin:  #43a047;  /* 日本維新の会 */
+    --ind:    #78909c;  /* 無所属 */
+    --unk:    #37474f;  /* 未確認 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #1a1d2e 0%, #242740 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+  header h1 span { color: var(--accent); }
+  .header-meta { font-size: 11px; color: var(--text2); text-align: right; }
+  .header-meta a { color: var(--text3); text-decoration: none; }
+  .header-meta a:hover { color: var(--text2); }
+
+  /* ── NOTICE ── */
+  .notice {
+    background: #1a1a2e;
+    border-left: 3px solid #f9c74f;
+    margin: 16px 28px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text2);
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 10px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--text2);
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: border-color .2s;
+  }
+  .legend-item:hover { border-color: var(--border); }
+  .legend-item.active { border-color: var(--text3); }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 0;
+    height: calc(100vh - 140px);
+    overflow: hidden;
+  }
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; height: auto; }
+  }
+
+  /* ── MAP PANEL ── */
+  .map-panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .map-panel h2 {
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── DISTRICT GRID ── */
+  .district-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .district-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: left;
+    color: var(--text);
+  }
+  .district-btn:hover { border-color: var(--accent); background: #1e2140; }
+  .district-btn.active { border-color: var(--accent); background: #1e2140; box-shadow: 0 0 0 1px var(--accent); }
+  .district-name { font-size: 13px; font-weight: 600; }
+  .district-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .district-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .district-seats { font-size: 11px; color: var(--text2); }
+  .party-dots { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; max-width: 100px; }
+  .party-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.15);
+  }
+
+  /* ── DETAIL PANEL ── */
+  .detail-panel {
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text3);
+    font-size: 14px;
+    gap: 12px;
+  }
+  .detail-empty svg { opacity: .3; }
+
+  .detail-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .detail-header .sub {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* ── MEMBER CARDS ── */
+  .member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .member-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color .2s;
+  }
+  .member-card:hover { border-color: var(--text3); }
+  .member-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .member-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .member-info h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .member-info .yomi {
+    font-size: 10px;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+  .member-party-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .member-role {
+    font-size: 10px;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+  .member-policy {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+  .member-policy-label {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: .5px;
+  }
+  .member-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .member-link:hover { opacity: .7; }
+  .unknown-badge {
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-top: 6px;
+    display: inline-block;
+  }
+
+  /* ── FACTION SUMMARY ── */
+  .faction-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .faction-summary h3 {
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .faction-bars { display: flex; flex-direction: column; gap: 8px; }
+  .faction-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .faction-label { font-size: 11px; color: var(--text2); width: 130px; flex-shrink: 0; }
+  .faction-bar-wrap { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .faction-bar { height: 100%; border-radius: 4px; transition: width .6s ease; }
+  .faction-count { font-size: 11px; color: var(--text); width: 25px; text-align: right; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>沖縄県議会 <span>議員マップ</span> 2024</h1>
+  </div>
+  <div class="header-meta">
+    2024年6月16日 第14回一般選挙後 ／ 定数48議席<br>
+    データ出典：<a href="https://www.pref.okinawa.lg.jp/kensei/gikai/index.html" target="_blank">沖縄県公式</a>・各党公式・報道資料
+  </div>
+</header>
+
+<div class="notice">
+  ⚠ このページのデータは公開情報をもとに作成しています。政策・公式サイトは議員本人の公開情報から取得しています。最新・正確な情報は
+  <a href="https://www.pref.okinawa.lg.jp/kensei/gikai/index.html" target="_blank" style="color:#6c63ff">沖縄県議会公式サイト</a> をご確認ください。
+</div>
+
+<!-- 凡例 -->
+<div class="legend" id="legend">
+  <span class="legend-item" data-party="自由民主党">
+    <span class="legend-dot" style="background:var(--ldp)"></span>自由民主党
+  </span>
+  <span class="legend-item" data-party="公明党">
+    <span class="legend-dot" style="background:var(--komeito)"></span>公明党
+  </span>
+  <span class="legend-item" data-party="立憲民主党">
+    <span class="legend-dot" style="background:var(--cdp)"></span>立憲民主党
+  </span>
+  <span class="legend-item" data-party="日本共産党">
+    <span class="legend-dot" style="background:var(--jcp)"></span>日本共産党
+  </span>
+  <span class="legend-item" data-party="社会民主党">
+    <span class="legend-dot" style="background:var(--sdp)"></span>社会民主党
+  </span>
+  <span class="legend-item" data-party="沖縄社会大衆党">
+    <span class="legend-dot" style="background:var(--ssd)"></span>沖縄社会大衆党
+  </span>
+  <span class="legend-item" data-party="日本維新の会">
+    <span class="legend-dot" style="background:var(--ishin)"></span>日本維新の会
+  </span>
+  <span class="legend-item" data-party="無所属">
+    <span class="legend-dot" style="background:var(--ind)"></span>無所属
+  </span>
+</div>
+
+<div class="main">
+  <!-- 左：選挙区リスト -->
+  <div class="map-panel">
+    <h2>選挙区一覧</h2>
+    <div class="faction-summary">
+      <h3>会派別議席数（2024年選挙後）</h3>
+      <div class="faction-bars" id="factionBars"></div>
+    </div>
+    <div class="district-grid" id="districtGrid"></div>
+  </div>
+
+  <!-- 右：議員詳細 -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-empty">
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <span>左の選挙区をクリックすると<br>議員情報が表示されます</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── データ ──────────────────────────────────────────────────────────────────
+
+const PARTY_COLOR = {
+  '自由民主党':   '#e53935',
+  '公明党':       '#f9c74f',
+  '立憲民主党':   '#1565c0',
+  '日本共産党':   '#c62828',
+  '社会民主党':   '#e91e63',
+  '沖縄社会大衆党': '#00897b',
+  '日本維新の会': '#43a047',
+  '無所属':       '#78909c',
+  '未確認':       '#37474f',
+};
+
+const PARTY_SHORT = {
+  '自由民主党':   '自民',
+  '公明党':       '公明',
+  '立憲民主党':   '立民',
+  '日本共産党':   '共産',
+  '社会民主党':   '社民',
+  '沖縄社会大衆党': '沖社大',
+  '日本維新の会': '維新',
+  '無所属':       '無',
+  '未確認':       '?',
+};
+
+const FACTIONS = [
+  { name: '沖縄自民党・無所属の会', seats: 20, color: '#e53935' },
+  { name: 'てぃーだ平和ネット',      seats: 10, color: '#1565c0' },
+  { name: '公明党',                  seats:  4, color: '#f9c74f' },
+  { name: '沖縄・共産',              seats:  4, color: '#c62828' },
+  { name: '沖縄社会大衆党',          seats:  4, color: '#00897b' },
+  { name: '社会民主党',              seats:  4, color: '#e91e63' },
+  { name: '日本維新の会',            seats:  1, color: '#43a047' },
+  { name: '未確認・無所属',          seats:  1, color: '#37474f' },
+];
+
+// 議員データ（2024年6月選挙後・公開情報より）
+// 出典: 沖縄県公式、各党公式、メディア報道
+const MEMBERS = [
+  // ── 那覇市・南部離島選挙区（11席）──
+  {
+    name: '渡久地 修', yomi: 'とぐち おさむ',
+    district: '那覇市・南部離島選挙区', party: '日本共産党',
+    faction: '沖縄・共産',
+    policy: '基地問題・平和・沖縄の自治を重視。辺野古新基地建設反対、教育・福祉の充実を訴える。',
+    site: null,
+  },
+  {
+    name: '比嘉 瑞己', yomi: 'ひが みずき',
+    district: '那覇市・南部離島選挙区', party: '日本共産党',
+    faction: '沖縄・共産',
+    policy: '軍事基地縮小・平和外交の推進、医療・介護充実、物価高対策を重点政策とする。',
+    site: null,
+  },
+  {
+    name: '喜友名 智子', yomi: 'きゆな ともこ',
+    district: '那覇市・南部離島選挙区', party: '立憲民主党',
+    faction: 'てぃーだ平和ネット',
+    policy: '女性・子どもの権利保護、ジェンダー平等、基地問題・平和外交、子育て支援を訴える。',
+    site: 'https://kiyuna-tomoko.com/',
+  },
+  {
+    name: '平良 識子', yomi: 'たいら さとこ',
+    district: '那覇市・南部離島選挙区', party: '社会民主党',
+    faction: 'てぃーだ平和ネット',
+    policy: '平和・反基地、女性の権利、社会保障の充実、脱原発・再生可能エネルギーを推進。',
+    site: null,
+  },
+  {
+    name: '上原 章', yomi: 'うえはら あきら',
+    district: '那覇市・南部離島選挙区', party: '公明党',
+    faction: '公明党',
+    policy: '生活者目線の政治、教育・福祉の充実、防災・減災対策、中小企業支援を重点に活動。',
+    site: null,
+  },
+  {
+    name: '糸数 昌洋', yomi: 'いとかず まさひろ',
+    district: '那覇市・南部離島選挙区', party: '公明党',
+    faction: '公明党',
+    policy: '観光振興・経済活性化、子育て・教育の充実、離島振興、医療・介護体制の強化を訴える。',
+    site: null,
+  },
+  {
+    name: '新垣 淑豊', yomi: 'あらかき よしとよ',
+    district: '那覇市・南部離島選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '経済振興・観光立県の推進、那覇都市圏の整備、教育・産業基盤の強化を掲げる。',
+    site: null,
+  },
+  {
+    name: '西銘 啓史郎', yomi: 'にしめ けいしろう',
+    district: '那覇市・南部離島選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '日米同盟堅持・安全保障、経済特区・観光振興、中小企業・農漁業支援を重視。',
+    site: null,
+  },
+  {
+    name: '當間 盛夫', yomi: 'とうま もりお',
+    district: '那覇市・南部離島選挙区', party: '無所属',
+    faction: '沖縄自民党・無所属の会',
+    policy: '観光・経済振興、道路・インフラ整備、南部離島地域の利益代表として活動。',
+    site: null,
+  },
+  {
+    name: '上原 快佐', yomi: 'うえはら かいさ',
+    district: '那覇市・南部離島選挙区', party: '沖縄社会大衆党',
+    faction: 'てぃーだ平和ネット',
+    policy: '沖縄の自立・基地問題解決、経済格差是正、子どもの貧困対策を重点的に取り組む。',
+    site: null,
+  },
+  {
+    name: '大城 毅', yomi: 'おおしろ たけし',
+    district: '那覇市・南部離島選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '那覇市の都市整備・経済振興、港湾・空港インフラ充実、観光立県を推進。',
+    site: null,
+  },
+
+  // ── 浦添市選挙区（4席）──
+  {
+    name: '西銘 純恵', yomi: 'にしめ すみえ',
+    district: '浦添市選挙区', party: '日本共産党',
+    faction: '沖縄・共産',
+    policy: '基地問題・平和、教育・医療・福祉の充実、ジェンダー平等、物価高対策を訴える。',
+    site: null,
+  },
+  {
+    name: '国場 幸之助', yomi: 'こくば こうのすけ',
+    district: '浦添市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '経済成長・産業振興、日米安保堅持、観光振興と地域経済の活性化を重点政策とする。',
+    site: null,
+  },
+  {
+    name: '呉屋 宏', yomi: 'ごや ひろし',
+    district: '浦添市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '地域経済振興・インフラ整備、中小企業・商工業の支援、住民生活向上を訴える。',
+    site: null,
+  },
+  {
+    name: '又吉 清義', yomi: 'またよし きよし',
+    district: '浦添市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '行政改革・財政健全化、観光・IT産業振興、浦添港湾周辺の都市開発を推進。',
+    site: null,
+  },
+
+  // ── 宜野湾市選挙区（3席）──
+  {
+    name: '桃原 功', yomi: 'ももはら いさお',
+    district: '宜野湾市選挙区', party: '沖縄社会大衆党',
+    faction: 'てぃーだ平和ネット',
+    policy: '普天間基地の早期閉鎖・返還、住民の安全確保、子育て・教育支援を最重点課題とする。',
+    site: null,
+  },
+  {
+    name: '知念 辰憲', yomi: 'ちねん たつのり',
+    district: '宜野湾市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '宜野湾市の発展・経済振興、普天間移設の早期解決、観光・文化振興を推進。',
+    site: null,
+  },
+  {
+    name: '玉城 武光', yomi: 'たまき たけみつ',
+    district: '宜野湾市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '安全保障・日米同盟堅持、地域経済の活性化、子育て支援・教育の充実を訴える。',
+    site: null,
+  },
+
+  // ── 沖縄市選挙区（5席）──
+  {
+    name: '仲村 未央', yomi: 'なかむら みお',
+    district: '沖縄市選挙区', party: '立憲民主党',
+    faction: 'てぃーだ平和ネット',
+    policy: '子どもの貧困対策、ジェンダー平等、基地問題・平和外交、脱原発・再生可能エネルギーを訴える。',
+    site: 'https://www.miocafe1638.com/',
+  },
+  {
+    name: '照屋 大河', yomi: 'てるや たいが',
+    district: '沖縄市選挙区', party: '社会民主党',
+    faction: 'てぃーだ平和ネット',
+    policy: '平和・反基地、格差是正・社会保障充実、脱炭素・環境政策を重点課題とする。',
+    site: null,
+  },
+  {
+    name: '亀浜 玲子', yomi: 'かめはま れいこ',
+    district: '沖縄市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '女性活躍推進、子育て・教育環境の整備、観光・文化振興、地域経済活性化を推進。',
+    site: null,
+  },
+  {
+    name: '大浜 一郎', yomi: 'おおはま いちろう',
+    district: '沖縄市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '観光・IT産業の振興、米軍基地問題の現実的解決、沖縄市の産業・雇用創出を推進。',
+    site: null,
+  },
+  {
+    name: '島袋 大', yomi: 'しまぶく だい',
+    district: '沖縄市選挙区', party: '公明党',
+    faction: '公明党',
+    policy: '生活者・弱者目線の政治、教育・福祉充実、インフラ整備、中小企業支援を重点とする。',
+    site: null,
+  },
+
+  // ── うるま市選挙区（4席）──
+  {
+    name: '東恩納 琢磨', yomi: 'ひがしおんな たくま',
+    district: 'うるま市選挙区', party: '沖縄社会大衆党',
+    faction: 'てぃーだ平和ネット',
+    policy: '基地問題・環境保護、農漁業振興、うるま市の地域経済活性化、住民生活向上を訴える。',
+    site: null,
+  },
+  {
+    name: '座波 一', yomi: 'ざは はじめ',
+    district: 'うるま市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '地域振興・雇用創出、農業・水産業支援、うるま市のインフラ整備・都市計画を推進。',
+    site: null,
+  },
+  {
+    name: '照屋 守之', yomi: 'てるや もりゆき',
+    district: 'うるま市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '行財政改革、経済振興・企業誘致、地域コミュニティの活性化を重点政策とする。',
+    site: null,
+  },
+  {
+    name: '花城 大輔', yomi: 'はなしろ だいすけ',
+    district: 'うるま市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '産業振興・観光立県、若者雇用創出、地域医療・福祉の充実を訴える。',
+    site: null,
+  },
+
+  // ── 中頭郡選挙区（5席）──
+  {
+    name: '中川 京貴', yomi: 'なかがわ きょうき',
+    district: '中頭郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    role: '議長',
+    policy: '県民の安全・安心を守る政治、経済振興・観光立県、日米同盟を基軸とした安全保障政策。',
+    site: 'https://nakagawa.okinawa/',
+  },
+  {
+    name: '島袋 恵祐', yomi: 'しまぶく けいすけ',
+    district: '中頭郡選挙区', party: '社会民主党',
+    faction: '社会民主党',
+    policy: '平和・脱原発、農業・環境保護、中頭郡の地域振興と住民生活向上を訴える。',
+    site: null,
+  },
+  {
+    name: '末松 文信', yomi: 'すえまつ ふみのぶ',
+    district: '中頭郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '農業・農村振興、地域インフラ整備、観光振興、日米同盟堅持の安全保障を重視。',
+    site: null,
+  },
+  {
+    name: '石原 昌雄', yomi: 'いしはら まさお',
+    district: '中頭郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '読谷・嘉手納地区の地域振興、基地跡地利用の推進、子育て・教育環境充実を掲げる。',
+    site: null,
+  },
+  {
+    name: '新垣 光栄', yomi: 'あらかき こうえい',
+    district: '中頭郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '地域経済・産業振興、インフラ・交通整備、農業・観光の振興を重点課題とする。',
+    site: null,
+  },
+
+  // ── 名護市選挙区（2席）──
+  {
+    name: '比嘉 勝彦', yomi: 'ひが かつひこ',
+    district: '名護市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '辺野古移設推進・安全保障、名護市の経済振興・雇用創出、観光・農漁業の振興。',
+    site: null,
+  },
+  {
+    name: '翁長 雄治', yomi: 'おなが たけはる',
+    district: '名護市選挙区', party: '沖縄社会大衆党',
+    faction: 'てぃーだ平和ネット',
+    policy: '辺野古新基地建設反対、北部地域振興・経済自立、若者雇用・子育て支援を推進。',
+    site: null,
+  },
+
+  // ── 国頭郡選挙区（2席）──
+  {
+    name: '比嘉 京子', yomi: 'ひが きょうこ',
+    district: '国頭郡選挙区', party: '社会民主党',
+    faction: '社会民主党',
+    policy: '基地問題・平和、自然環境保護、やんばるの農業・観光振興、女性の権利向上を訴える。',
+    site: null,
+  },
+  {
+    name: '神山 正樹', yomi: 'かみやま まさき',
+    district: '国頭郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: 'やんばる地域振興・離島振興、観光・農林業の活性化、道路・インフラ整備を推進。',
+    site: null,
+  },
+
+  // ── 糸満市・豊見城市・南城市選挙区（5席）──
+  {
+    name: '瀬長 美佐雄', yomi: 'せなが みさお',
+    district: '糸満市・豊見城市・南城市選挙区', party: '日本共産党',
+    faction: '沖縄・共産',
+    policy: '基地問題・平和、社会保障・医療充実、農漁業振興、格差是正を重点政策として活動。',
+    site: null,
+  },
+  {
+    name: '新垣 安弘', yomi: 'あらかき やすひろ',
+    district: '糸満市・豊見城市・南城市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '地域経済・農漁業振興、道路・港湾整備、子育て・教育環境の充実を訴える。',
+    site: null,
+  },
+  {
+    name: '伊佐 哲雄', yomi: 'いさ てつお',
+    district: '糸満市・豊見城市・南城市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '南部地域の産業・観光振興、インフラ整備、日米同盟を基軸とした安全保障政策。',
+    site: null,
+  },
+  {
+    name: '與那嶺 克枝', yomi: 'よなみね かつえ',
+    district: '糸満市・豊見城市・南城市選挙区', party: '沖縄社会大衆党',
+    faction: 'てぃーだ平和ネット',
+    policy: '女性・子どもの権利保護、基地問題、農業振興、南部地域の生活向上を推進。',
+    site: null,
+  },
+  {
+    name: '平良 昭一', yomi: 'たいら しょういち',
+    district: '糸満市・豊見城市・南城市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '農漁業振興・6次産業化、観光振興、地域経済活性化、安全保障の現実的対応を訴える。',
+    site: null,
+  },
+
+  // ── 島尻郡選挙区（2席）──
+  {
+    name: '仲田 弘毅', yomi: 'なかだ こうき',
+    district: '島尻郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '島尻郡の地域振興・農漁業支援、インフラ整備、地域コミュニティの活性化を推進。',
+    site: null,
+  },
+  {
+    name: '儀間 光秀', yomi: 'ぎま みつひで',
+    district: '島尻郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '農漁業振興・離島振興、道路・港湾整備、観光資源活用による地域活性化を掲げる。',
+    site: null,
+  },
+
+  // ── 宮古島市選挙区（3席）──
+  {
+    name: '下地 康教', yomi: 'しもじ やすのり',
+    district: '宮古島市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '宮古島の観光・経済振興、自衛隊配備問題、農漁業・離島振興を重点課題とする。',
+    site: null,
+  },
+  {
+    name: '砂川 利勝', yomi: 'すながわ としかつ',
+    district: '宮古島市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '観光立島・農業振興、インフラ整備、宮古・多良間の地域経済活性化を推進。',
+    site: null,
+  },
+  {
+    name: '亀浜 盛雄', yomi: 'かめはま もりお',
+    district: '宮古島市選挙区', party: '日本維新の会',
+    faction: '日本維新の会',
+    policy: '身を切る改革・行財政改革、観光・経済振興、宮古島の自立的発展を訴える。',
+    site: null,
+  },
+
+  // ── 石垣市選挙区（2席）──
+  {
+    name: '砂川 利廣', yomi: 'すながわ としひろ',
+    district: '石垣市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '南西防衛・自衛隊配備、観光振興、農漁業・離島振興、石垣市の経済活性化を推進。',
+    site: null,
+  },
+  {
+    name: '大浜 栄市', yomi: 'おおはま えいいち',
+    district: '石垣市選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '八重山地域の振興・開発、農漁業・観光産業支援、地域インフラの整備拡充を訴える。',
+    site: null,
+  },
+
+  // ── 八重山郡選挙区（2席）──
+  {
+    name: '大浜 一朗', yomi: 'おおはま いちろう',
+    district: '八重山郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '竹富・与那国の離島振興、農漁業支援、南西防衛・安全保障、観光立島を推進。',
+    site: null,
+  },
+  {
+    name: '伊良皆 高信', yomi: 'いらみな たかのぶ',
+    district: '八重山郡選挙区', party: '自由民主党',
+    faction: '沖縄自民党・無所属の会',
+    policy: '離島振興・過疎対策、農漁業・観光の振興、与那国・竹富の地域自立発展を掲げる。',
+    site: null,
+  },
+];
+
+// ── 選挙区データ ─────────────────────────────────────────────────────────────
+
+const DISTRICTS = [
+  { name: '那覇市・南部離島選挙区', seats: 11,
+    desc: '那覇市、渡嘉敷村、座間味村、粟国村、渡名喜村、南大東村、北大東村、久米島町' },
+  { name: '浦添市選挙区', seats: 4, desc: '浦添市' },
+  { name: '宜野湾市選挙区', seats: 3, desc: '宜野湾市' },
+  { name: '沖縄市選挙区', seats: 5, desc: '沖縄市' },
+  { name: 'うるま市選挙区', seats: 4, desc: 'うるま市' },
+  { name: '中頭郡選挙区', seats: 5, desc: '読谷村、嘉手納町、北谷町、北中城村、中城村、西原町' },
+  { name: '名護市選挙区', seats: 2, desc: '名護市' },
+  { name: '国頭郡選挙区', seats: 2, desc: '国頭村、大宜味村、東村、今帰仁村、本部町、恩納村、宜野座村、金武町、伊江村、伊平屋村、伊是名村' },
+  { name: '糸満市・豊見城市・南城市選挙区', seats: 5, desc: '糸満市、豊見城市、南城市' },
+  { name: '島尻郡選挙区', seats: 2, desc: '与那原町、南風原町、八重瀬町' },
+  { name: '宮古島市選挙区', seats: 3, desc: '宮古島市、多良間村' },
+  { name: '石垣市選挙区', seats: 2, desc: '石垣市' },
+  { name: '八重山郡選挙区', seats: 2, desc: '竹富町、与那国町' },
+];
+
+// ── ビルド ────────────────────────────────────────────────────────────────────
+
+function partyColor(party) {
+  return PARTY_COLOR[party] || PARTY_COLOR['未確認'];
+}
+function partyShort(party) {
+  return PARTY_SHORT[party] || party;
+}
+
+function getMembersOf(districtName) {
+  return MEMBERS.filter(m => m.district === districtName);
+}
+
+// 会派バー
+function buildFactionBars() {
+  const el = document.getElementById('factionBars');
+  const max = Math.max(...FACTIONS.map(f => f.seats));
+  el.innerHTML = FACTIONS.map(f => `
+    <div class="faction-row">
+      <div class="faction-label">${f.name}</div>
+      <div class="faction-bar-wrap">
+        <div class="faction-bar" style="width:${(f.seats/max*100).toFixed(1)}%;background:${f.color}"></div>
+      </div>
+      <div class="faction-count">${f.seats}</div>
+    </div>
+  `).join('');
+}
+
+// 選挙区リスト
+function buildDistrictGrid() {
+  const el = document.getElementById('districtGrid');
+  el.innerHTML = DISTRICTS.map(d => {
+    const members = getMembersOf(d.name);
+    const dots = members.map(m =>
+      `<span class="party-dot" style="background:${partyColor(m.party)}" title="${m.name}（${m.party}）"></span>`
+    ).join('');
+    const unknownCount = d.seats - members.length;
+    const unknownDots = unknownCount > 0
+      ? Array(unknownCount).fill(`<span class="party-dot" style="background:var(--unk)"></span>`).join('')
+      : '';
+    return `
+      <button class="district-btn" data-district="${d.name}" onclick="selectDistrict('${d.name}', this)">
+        <div>
+          <div class="district-name">${d.name}</div>
+          <div class="district-meta">${d.desc.length > 28 ? d.desc.slice(0,28)+'…' : d.desc}</div>
+        </div>
+        <div class="district-right">
+          <div class="district-seats">定数 ${d.seats}</div>
+          <div class="party-dots">${dots}${unknownDots}</div>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+// 議員カード
+function memberCard(m) {
+  const initial = m.name.replace(/\s/g,'')[0];
+  const color = partyColor(m.party);
+  return `
+    <div class="member-card">
+      <div class="member-card-top">
+        <div class="member-avatar" style="background:${color}22;border:2px solid ${color}44">
+          <span style="color:${color}">${initial}</span>
+        </div>
+        <div class="member-info">
+          <h3>${m.name}</h3>
+          <div class="yomi">${m.yomi}</div>
+          <span class="member-party-badge" style="background:${color}">${m.party}</span>
+        </div>
+      </div>
+      ${m.role ? `<div class="member-role">▷ ${m.role}</div>` : ''}
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px">会派：${m.faction}</div>
+      <div class="member-policy">
+        <div class="member-policy-label">主な政策・活動方針</div>
+        ${m.policy}
+      </div>
+      ${m.site ? `<a class="member-link" href="${m.site}" target="_blank">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>公式サイト
+      </a>` : ''}
+    </div>`;
+}
+
+// 選挙区選択
+let activeBtn = null;
+function selectDistrict(name, btn) {
+  if (activeBtn) activeBtn.classList.remove('active');
+  btn.classList.add('active');
+  activeBtn = btn;
+
+  const d = DISTRICTS.find(x => x.name === name);
+  const members = getMembersOf(name);
+  const detail = document.getElementById('detailPanel');
+
+  const partyCounts = {};
+  members.forEach(m => { partyCounts[m.party] = (partyCounts[m.party]||0)+1; });
+  const partyBadges = Object.entries(partyCounts)
+    .map(([p,n]) => `<span style="background:${partyColor(p)};color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-right:4px">${p} ${n}</span>`)
+    .join('');
+
+  const missingCount = d.seats - members.length;
+  const missingNote = missingCount > 0
+    ? `<div style="color:var(--text3);font-size:11px;margin-top:8px">※ ${missingCount}名のデータは公開情報から取得できていません。<a href="https://www.pref.okinawa.lg.jp/kensei/gikai/index.html" target="_blank" style="color:var(--accent)">公式サイト</a>をご確認ください。</div>`
+    : '';
+
+  detail.innerHTML = `
+    <div class="detail-header">
+      <h2>${name}</h2>
+      <div class="sub">定数 ${d.seats}議席　│　${d.desc}</div>
+      <div style="margin-top:10px">${partyBadges}</div>
+      ${missingNote}
+    </div>
+    <div class="member-grid">
+      ${members.length > 0 ? members.map(memberCard).join('') : '<div style="color:var(--text3);padding:20px">議員データが未取得です。公式サイトをご確認ください。</div>'}
+    </div>
+  `;
+}
+
+// 凡例フィルタ
+document.querySelectorAll('.legend-item').forEach(item => {
+  item.addEventListener('click', () => {
+    item.classList.toggle('active');
+    // 現在の選択区を再描画
+    if (activeBtn) {
+      const name = activeBtn.dataset.district;
+      selectDistrict(name, activeBtn);
+    }
+  });
+});
+
+// ── 初期化 ──
+buildFactionBars();
+buildDistrictGrid();
+</script>
+
+</body>
+</html>
